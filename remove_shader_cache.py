@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 import logging
 
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def remove_files_in_directory(directory: Path):
@@ -11,18 +12,24 @@ def remove_files_in_directory(directory: Path):
     Args:
         directory (Path): The directory to clear.
     """
-    if directory.exists():
-        for item in directory.iterdir():
-            try:
-                if item.is_file() or item.is_symlink():
-                    item.unlink()
-                elif item.is_dir():
-                    shutil.rmtree(item)
-                logging.info(f"Deleted: {item}")
-            except Exception as e:
-                logging.error(f"Failed to delete {item}. Reason: {e}")
-    else:
+    if not directory.exists():
         logging.warning(f"Directory {directory} does not exist.")
+        return
+
+    for item in directory.iterdir():
+        try:
+            if item.is_file() or item.is_symlink():
+                item.unlink()
+                logging.info(f"Deleted file/symlink: {item}")
+            elif item.is_dir():
+                shutil.rmtree(item)
+                logging.info(f"Deleted directory: {item}")
+        except FileNotFoundError:
+            logging.error(f"File not found: {item}")
+        except PermissionError:
+            logging.error(f"Permission denied: {item}")
+        except Exception as e:
+            logging.error(f"Failed to delete {item}. Reason: {e}")
 
 def remove_shader_cache():
     """
@@ -45,7 +52,10 @@ def remove_shader_cache():
     ]
 
     for directory in shader_cache_directories:
+        logging.info(f"Clearing shader cache in directory: {directory}")
         remove_files_in_directory(directory)
 
 if __name__ == "__main__":
+    logging.info("Starting shader cache cleanup...")
     remove_shader_cache()
+    logging.info("Shader cache cleanup completed.")

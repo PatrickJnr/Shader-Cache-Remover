@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0] - 2024-07-14
+
+### Added
+- Additional logging messages to provide more detailed user feedback during the cleanup process.
+- Detailed docstrings to enhance code documentation and readability.
+
+### Changed
+- Optimized directory traversal for larger directories by logging before processing each directory.
+- Enhanced error handling to catch and log specific exceptions (`FileNotFoundError`, `PermissionError`) separately.
+
+### Removed
+- Redundant and unspecific exception handling, replaced with more targeted exception handling.
+
 ## [1.1.0] - 2024-05-21
 
 ### Changed

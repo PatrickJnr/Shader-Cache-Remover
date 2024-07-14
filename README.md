@@ -41,3 +41,7 @@ The script removes shader cache files from the following known locations:
 - Running this script will permanently delete files in the specified directories. Ensure you understand the impact of this action, especially if you're running it on a system where the shader cache might be needed.
 - Run the script with administrative privileges to ensure all cache files can be deleted.
 
+## Image
+![image](https://github.com/user-attachments/assets/13bf748b-7576-4369-8f43-f675e5a0e052)
+
+
