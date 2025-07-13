@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.4.0] - 13-07-2025
+
+### Added
+- **Enhanced User Interface**: Complete GUI overhaul with a modern dark theme and improved layout.
+- **Real-time Progress Tracking**: Added a progress bar with live updates during cleanup operations.
+- **Comprehensive Statistics**: Real-time display of files deleted, directories removed, bytes freed, errors, and elapsed time.
+- **Settings System**: Configurable settings with persistent storage in a JSON file.
+- **Auto-backup Feature**: Optional automatic backup before cleanup with a configurable backup location.
+- **Stop Functionality**: Ability to cancel cleanup operations in progress.
+- **Status Updates**: Real-time status messages showing the current operation's progress.
+- **Configuration Management**: Settings stored in the user's home directory with auto-loading/saving.
+- **Enhanced Logging**: Timestamped and color-coded log entries with improved formatting and visibility controls.
+- **Cross-platform Compatibility**: Improved drive detection for Windows and Unix-like systems.
+- **Additional Shader Cache Locations**: Support for Intel shader cache, AMD GLCache, and custom user-defined paths.
+- **Better Error Reporting**: Comprehensive error counting and detailed error messages in the log.
+- **Thread Safety**: Proper thread management with daemon threads and clean shutdown procedures.
+- **Window Close Handling**: Safe application exit with confirmation if a cleanup is in progress.
+- **Human-readable File Sizes**: Automatic formatting of byte values to KB/MB/GB/TB.
+- **Custom Path Support**: Ability to add, edit, and validate custom shader cache directories through the settings menu.
+
+### Changed
+- **Code Architecture**: Complete refactoring with better separation of concerns, type hints, and the use of dataclasses.
+- **Button Layout**: Improved button arrangement with a better visual hierarchy and clear actions.
+- **Logging System**: Enhanced logging with queue-based message processing for improved thread safety.
+- **Directory Processing**: More robust directory traversal with better error handling.
+- **Internal Method Naming**: Renamed internal methods for clarity and to resolve critical naming conflicts (e.g., `start_dry_run`).
+- **Backup System**: Enhanced backup functionality with better directory structure preservation and error handling.
+- **Dry Run Implementation**: Improved dry run mode with accurate item counting and preview logging.
+
+### Improved
+- **Performance**: Optimized directory scanning and file operations.
+- **User Experience**: A more intuitive interface with clear feedback and status updates. The settings window is now a proper modal dialog, improving workflow.
+- **Reliability**: Enhanced robustness by preventing the duplicate processing of the same cache directory.
+- **Safety**: Improved graceful application shutdown, even when a cleanup process is active.
+- **Resource Management**: More reliable management of resources, such as ensuring Windows registry keys are always closed properly.
+- **Error Handling**: Increased resilience against file system errors (e.g., a file being deleted by an external process during cleanup).
+- **Code Quality**: Added type hints, dataclasses, and better documentation for improved maintainability.
+
+### Fixed
+- **Critical Button Functionality**: Resolved a major bug where the 'Dry Run' and 'Backup Shaders' buttons did not work correctly due to a method naming conflict.
+- **UI Freezing**: Eliminated GUI freezing during long operations by correctly managing background threads and UI updates.
+- **Dialog Box Behavior**: Ensured that dialog boxes (e.g., for file selection or warnings) correctly appear on top of the settings window.
+- **Registry Access**: Implemented safer handling of Windows registry access to prevent errors and ensure resource cleanup.
+- **Path Handling**: Improved cross-platform path management and validation of custom paths.
+- **Error Propagation**: Corrected error reporting from background threads to the main UI and logs.
+- **Progress Accuracy**: Refined progress and statistics display logic for better accuracy at the beginning and end of operations.
+
 ## [1.3.0] - 25-07-2024
 
 ### Added
