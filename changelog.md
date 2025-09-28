@@ -1,5 +1,65 @@
 # Changelog
 
+## [1.5.0] - 28-09-2025
+
+### 🚀 Major Architecture Overhaul - Modular Refactoring
+
+#### Added
+- **Complete Modular Architecture**: Transformed monolithic 1000+ line script into clean, maintainable modules
+- **Core Services Layer**: Dedicated business logic modules for detection, cleanup, and backup operations
+- **Infrastructure Layer**: Supporting services for configuration, logging, and system integration
+- **GUI Components**: Modular interface components with proper separation of concerns
+- **Comprehensive Test Suite**: Automated testing with 4/4 test coverage validation
+- **Package Configuration**: Proper Python package setup with entry points and dependencies
+- **Dual Logging System**: Simultaneous console and GUI logging for enhanced debugging
+- **Single Entry Point**: Clean, unified application entry point with backward compatibility
+
+#### Changed
+- **Architecture**: Complete refactoring from procedural to modular object-oriented design
+- **Code Organization**: Separated concerns into logical modules (core, infrastructure, gui)
+- **Import System**: Implemented proper absolute imports for better maintainability
+- **Error Handling**: Enhanced exception handling with graceful degradation
+- **Logging Strategy**: Dual-output logging to both console and GUI interfaces
+
+#### Improved
+- **Maintainability**: Each module can be modified independently without affecting others
+- **Testability**: Services can be unit tested in isolation
+- **Extensibility**: Easy to add new cache detection methods and features
+- **Debugging**: Better error isolation and comprehensive logging
+- **Code Quality**: Type hints, proper documentation, and clean interfaces
+- **Performance**: Optimized module loading and service initialization
+
+#### Fixed
+- **Import Issues**: Resolved relative import problems with proper package structure
+- **Entry Point Confusion**: Eliminated duplicate main files with single clear entry point
+- **Logging Duplication**: Fixed logging to appear in both console and GUI as intended
+- **Module Dependencies**: Corrected circular import issues and dependency management
+
+### 📁 New Modular Structure
+```
+shader_cache_remover/
+├── core/                    # Business logic services
+│   ├── detection_service.py    # Shader cache directory detection
+│   ├── cleanup_service.py      # File and directory removal
+│   └── backup_service.py       # Backup operations
+├── infrastructure/          # Supporting services
+│   ├── config_manager.py       # Configuration management
+│   ├── registry_utils.py       # Windows registry operations
+│   └── logging_config.py       # Centralized logging
+├── gui/                     # User interface components
+│   ├── main_window.py          # Main application window
+│   └── settings_dialog.py      # Settings management dialog
+├── main.py                  # Application entry point
+└── setup.py                 # Package configuration
+```
+
+### 🛠 Technical Improvements
+- **Dependency Injection**: Proper service initialization and dependency management
+- **Configuration Management**: Centralized settings with validation and persistence
+- **Registry Integration**: Safe Windows registry operations with error handling
+- **Thread Safety**: Improved thread management for GUI responsiveness
+- **Resource Management**: Proper cleanup of system resources and file handles
+
 ## [1.4.0] - 13-07-2025
 
 ### Added
