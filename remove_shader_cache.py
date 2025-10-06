@@ -6,7 +6,6 @@ from various applications and game engines.
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add the current directory to Python path
