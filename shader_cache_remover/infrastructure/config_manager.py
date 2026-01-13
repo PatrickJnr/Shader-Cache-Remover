@@ -14,6 +14,9 @@ from typing import Dict, Any, Optional
 class ConfigManager:
     """Manager for application configuration settings."""
 
+    # Configuration version - increment when making schema changes
+    CONFIG_VERSION = 2
+
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize the configuration manager.
 
@@ -28,11 +31,15 @@ class ConfigManager:
 
         # Default configuration values
         self._default_config = {
+            "_version": self.CONFIG_VERSION,
             "auto_backup": False,
             "backup_location": str(Path.home() / "ShaderCacheBackups"),
             "show_progress": True,
             "detailed_logging": True,
             "custom_paths": [],
+            # New in v2: provider settings
+            "disabled_providers": [],
+            "provider_priorities": {},
         }
 
         self._config = None
@@ -61,6 +68,8 @@ class ConfigManager:
                     # Merge with defaults to ensure all keys exist
                     merged_config = self._default_config.copy()
                     merged_config.update(config)
+                    # Apply migrations if needed
+                    merged_config = self._migrate_config(merged_config)
                     self.logger.info(f"Configuration loaded from: {self.config_path}")
                     return merged_config
         except Exception as e:
@@ -68,6 +77,29 @@ class ConfigManager:
 
         self.logger.info("Using default configuration.")
         return self._default_config.copy()
+
+    def _migrate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply migrations for older config versions.
+        
+        Args:
+            config: Current configuration dictionary
+        
+        Returns:
+            Migrated configuration dictionary
+        """
+        version = config.get("_version", 1)
+        
+        if version < 2:
+            # Migration from v1 to v2: add provider settings
+            config["disabled_providers"] = config.get("disabled_providers", [])
+            config["provider_priorities"] = config.get("provider_priorities", {})
+            config["_version"] = 2
+            self.logger.info("Migrated config from v1 to v2")
+            # Save the migrated config
+            self._config = config
+            self.save_config()
+        
+        return config
 
     def save_config(self, config: Optional[Dict[str, Any]] = None) -> None:
         """Save configuration to file.
@@ -217,3 +249,53 @@ class ConfigManager:
             enabled: Whether to show progress bar
         """
         self.set_config_value("show_progress", enabled)
+
+    def get_disabled_providers(self) -> list:
+        """Get the list of disabled provider names.
+
+        Returns:
+            List of provider names that are disabled
+        """
+        return self.get_config_value("disabled_providers", [])
+
+    def set_disabled_providers(self, providers: list) -> None:
+        """Set the list of disabled providers.
+
+        Args:
+            providers: List of provider names to disable
+        """
+        self.set_config_value("disabled_providers", providers)
+
+    def add_disabled_provider(self, provider_name: str) -> None:
+        """Add a provider to the disabled list.
+
+        Args:
+            provider_name: Name of the provider to disable
+        """
+        disabled = self.get_disabled_providers()
+        if provider_name not in disabled:
+            disabled.append(provider_name)
+            self.set_disabled_providers(disabled)
+
+    def remove_disabled_provider(self, provider_name: str) -> None:
+        """Remove a provider from the disabled list (enable it).
+
+        Args:
+            provider_name: Name of the provider to enable
+        """
+        disabled = self.get_disabled_providers()
+        if provider_name in disabled:
+            disabled.remove(provider_name)
+            self.set_disabled_providers(disabled)
+
+    def is_provider_disabled(self, provider_name: str) -> bool:
+        """Check if a provider is disabled.
+
+        Args:
+            provider_name: Name of the provider to check
+
+        Returns:
+            True if provider is disabled, False otherwise
+        """
+        return provider_name in self.get_disabled_providers()
+

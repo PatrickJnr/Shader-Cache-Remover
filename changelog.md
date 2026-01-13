@@ -1,8 +1,90 @@
 # Changelog
 
+## [1.6.0] - 13-01-2026
+
+### Architecture Improvements & GUI Modernization
+
+#### Added
+- **Cache Provider Plugin System**: Extensible provider architecture for cache detection
+  - 12 built-in providers: NVIDIA, AMD, Intel, Steam, Epic Games, GOG Galaxy, EA App, Unreal Engine, Unity, System, Browser Cache, Custom
+  - Per-provider enable/disable configuration
+  - Priority-based detection ordering
+- **4 New Cache Providers**
+  - Epic Games Launcher (webcache, downloads)
+  - GOG Galaxy (webcache, storage)
+  - EA App/Origin (cache directories)
+  - Browser Cache (Chrome, Edge, Firefox, Brave, Opera GPU caches)
+- **UI Improvements**
+  - Collapsible "Cache Providers" section with per-provider checkboxes
+  - Confirmation dialog showing locations, estimated size, providers before cleanup
+  - Export Report button - saves cleanup stats and log to text file
+  - Restore button - restore from previous backups
+  - History button - view past cleanup operations
+- **Restore from Backup**
+  - New `RestoreDialog` for selecting and restoring backups
+  - `BackupService.list_backups()` and `restore_backup()` methods
+  - Shows backup date, size, and file count
+- **Cleanup History Tracking**
+  - `HistoryService` with JSON persistence (~/.shader_cache_remover_history.json)
+  - Records: timestamp, files, dirs, bytes, duration, providers used
+  - `HistoryDialog` showing all past cleanups with aggregate stats
+- **System Integration**
+  - `NotificationService` for Windows toast notifications (win10toast/plyer)
+  - `SchedulerService` for Windows Task Scheduler integration
+  - Optional dependencies in pyproject.toml: `pip install .[full]`
+- **Cancellation Tokens**: Thread-safe cooperative cancellation replacing boolean flags
+- **Centralized Deletion Gate**: Safety checks blocking system paths (Windows, Program Files)
+- **Pre-flight Validation Service**: Permission and disk space checks before cleanup
+- **Filesystem Abstraction**: `RealFileSystem` and `MockFileSystem` for testability
+- **Config Versioning**: Automatic migration support with `_version` field
+- **Modern pyproject.toml**: Replaced setup.py with hatchling build system
+
+#### Changed
+- **GUI Theme**: Replaced Catppuccin with Windows Fluent-inspired dark theme
+  - Neutral dark background (#1a1a1a)
+  - Windows blue accent (#0078d4)
+  - Semantic button colors (green/blue/orange/red)
+  - Cleaner card-based layout
+- **Code Reduction**: main_window.py (991->580 lines), settings_dialog.py (922->340 lines)
+- **DetectionService**: Refactored to use provider registry pattern
+- Progress bar now properly resizes when window is resized
+- Progress bar fills full width at 100% completion
+
+#### Improved
+- **Safety**: All deletions route through DeletionGate with absolute blocklist
+- **Testability**: MockFileSystem enables unit testing without real file operations
+- **Extensibility**: Custom providers can be registered at runtime
+- **Maintainability**: Cleaner separation between interfaces and implementations
+
+### New Core Modules
+```
+shader_cache_remover/core/
+├── interfaces.py         # CacheProvider protocol, CacheLocation, CacheType
+├── cancellation.py       # CancellationToken, CancellationTokenSource
+├── deletion_gate.py      # Centralized safety gate for deletions
+├── validation_service.py # Pre-flight validation checks
+├── history_service.py    # Cleanup history tracking
+└── providers/            # Cache detection providers
+    ├── nvidia.py, amd.py, intel.py
+    ├── steam.py, epic.py, gog.py, ea.py
+    ├── unreal.py, unity.py, browser.py
+    ├── system.py, custom.py
+    └── base.py           # BaseCacheProvider abstract class
+
+shader_cache_remover/gui/
+├── restore_dialog.py     # Restore from backup dialog
+└── history_dialog.py     # Cleanup history dialog
+
+shader_cache_remover/infrastructure/
+├── notifications.py      # Windows toast notifications
+└── scheduler.py          # Task Scheduler integration
+```
+
+---
+
 ## [1.5.0] - 28-09-2025
 
-### 🚀 Major Architecture Overhaul - Modular Refactoring
+### Major Architecture Overhaul - Modular Refactoring
 
 #### Added
 - **Complete Modular Architecture**: Transformed monolithic 1000+ line script into clean, maintainable modules
@@ -35,7 +117,7 @@
 - **Logging Duplication**: Fixed logging to appear in both console and GUI as intended
 - **Module Dependencies**: Corrected circular import issues and dependency management
 
-### 📁 New Modular Structure
+### New Modular Structure
 ```
 shader_cache_remover/
 ├── core/                    # Business logic services
@@ -53,7 +135,7 @@ shader_cache_remover/
 └── setup.py                 # Package configuration
 ```
 
-### 🛠 Technical Improvements
+### Technical Improvements
 - **Dependency Injection**: Proper service initialization and dependency management
 - **Configuration Management**: Centralized settings with validation and persistence
 - **Registry Integration**: Safe Windows registry operations with error handling

@@ -8,9 +8,13 @@ logging, registry operations, and other infrastructure concerns.
 from .config_manager import ConfigManager
 from .registry_utils import RegistryUtils
 from .logging_config import LoggingConfig
+from .filesystem import RealFileSystem, MockFileSystem
 
 __all__ = [
     "ConfigManager",
     "RegistryUtils",
     "LoggingConfig",
+    "RealFileSystem",
+    "MockFileSystem",
 ]
+

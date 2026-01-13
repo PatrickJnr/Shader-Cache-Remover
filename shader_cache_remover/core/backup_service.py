@@ -215,3 +215,114 @@ class BackupService:
             "backup_root": str(self.backup_root) if self.backup_root else None,
             "backup_enabled": self.backup_root is not None,
         }
+
+    def list_backups(self, backup_location: Path) -> list:
+        """List available backups in the backup location.
+
+        Args:
+            backup_location: Directory containing backups
+
+        Returns:
+            List of backup info dicts with name, date, size
+        """
+        backups = []
+        
+        if not backup_location or not backup_location.exists():
+            return backups
+        
+        try:
+            for item in backup_location.iterdir():
+                if item.is_dir() and item.name.startswith("ShaderCacheBackup_"):
+                    # Calculate total size
+                    total_size = 0
+                    file_count = 0
+                    for f in item.rglob("*"):
+                        if f.is_file():
+                            total_size += f.stat().st_size
+                            file_count += 1
+                    
+                    # Parse timestamp from name
+                    try:
+                        timestamp_str = item.name.replace("ShaderCacheBackup_", "")
+                        from datetime import datetime
+                        timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+                        date_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        date_str = "Unknown"
+                    
+                    backups.append({
+                        "path": item,
+                        "name": item.name,
+                        "date": date_str,
+                        "size": total_size,
+                        "file_count": file_count,
+                    })
+            
+            # Sort by date descending
+            backups.sort(key=lambda x: x["name"], reverse=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error listing backups: {e}")
+        
+        return backups
+
+    def restore_backup(self, backup_path: Path, progress_callback=None) -> dict:
+        """Restore files from a backup to their original locations.
+
+        Args:
+            backup_path: Path to the backup directory
+            progress_callback: Optional callback for progress updates
+
+        Returns:
+            Dict with restore stats
+        """
+        stats = {
+            "files_restored": 0,
+            "directories_restored": 0,
+            "errors": 0,
+            "bytes_restored": 0,
+        }
+        
+        if not backup_path or not backup_path.exists():
+            self.logger.error(f"Backup path does not exist: {backup_path}")
+            stats["errors"] = 1
+            return stats
+        
+        try:
+            # Get all items in backup
+            items = list(backup_path.rglob("*"))
+            total_items = len([i for i in items if i.is_file()])
+            processed = 0
+            
+            for item in items:
+                if item.is_file():
+                    try:
+                        # Reconstruct original path from backup structure
+                        relative_to_backup = item.relative_to(backup_path)
+                        # The backup structure mirrors the original drive structure
+                        original_path = Path(item.parts[0]) / relative_to_backup
+                        
+                        # Create parent directory if needed
+                        original_path.parent.mkdir(parents=True, exist_ok=True)
+                        
+                        # Copy file back
+                        shutil.copy2(item, original_path)
+                        stats["files_restored"] += 1
+                        stats["bytes_restored"] += item.stat().st_size
+                        
+                    except Exception as e:
+                        self.logger.error(f"Failed to restore {item}: {e}")
+                        stats["errors"] += 1
+                    
+                    processed += 1
+                    if progress_callback and total_items > 0:
+                        progress_callback((processed / total_items) * 100)
+            
+            self.logger.info(f"Restored {stats['files_restored']} files")
+            
+        except Exception as e:
+            self.logger.error(f"Restore failed: {e}")
+            stats["errors"] += 1
+        
+        return stats
+

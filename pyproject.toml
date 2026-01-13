@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shader-cache-remover"
+dynamic = ["version"]
+description = "A modular application for cleaning shader cache files from various applications and game engines"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "PatrickJnr" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
+keywords = ["shader", "cache", "cleanup", "nvidia", "amd", "steam", "gaming"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+]
+full = [
+    "win10toast",       # Windows notifications
+    "plyer",            # Cross-platform notifications
+    "pystray",          # System tray icon
+    "Pillow",           # Icon support for system tray
+]
+
+[project.scripts]
+shader-cache-remover = "shader_cache_remover.main:main"
+
+[project.gui-scripts]
+shader-cache-remover-gui = "shader_cache_remover.main:main"
+
+[project.urls]
+Homepage = "https://github.com/PatrickJnr/Shader-Cache-Remover"
+Repository = "https://github.com/PatrickJnr/Shader-Cache-Remover"
+Issues = "https://github.com/PatrickJnr/Shader-Cache-Remover/issues"
+
+[tool.hatch.version]
+path = "shader_cache_remover/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["shader_cache_remover"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "W", "B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["shader_cache_remover"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]
