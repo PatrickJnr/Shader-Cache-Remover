@@ -40,6 +40,7 @@ class ConfigManager:
             # New in v2: provider settings
             "disabled_providers": [],
             "provider_priorities": {},
+            "check_updates_on_startup": True,
         }
 
         self._config = None

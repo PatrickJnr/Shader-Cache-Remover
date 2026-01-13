@@ -5,7 +5,7 @@ This package provides a clean, modular architecture for detecting and removing
 shader cache files from various applications and game engines.
 """
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 __author__ = "PatrickJnr"
 
 from .core.cleanup_service import CleanupService

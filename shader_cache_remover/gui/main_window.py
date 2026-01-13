@@ -19,6 +19,9 @@ from shader_cache_remover.core.backup_service import BackupService
 from shader_cache_remover.core.history_service import HistoryService
 from shader_cache_remover.infrastructure.config_manager import ConfigManager
 from shader_cache_remover.infrastructure.logging_config import LoggingConfig
+from shader_cache_remover.infrastructure.scheduler import SchedulerService
+from shader_cache_remover.gui.schedule_dialog import ScheduleDialog
+from shader_cache_remover.core.update_service import UpdateService
 
 
 class MainWindow:
@@ -50,6 +53,7 @@ class MainWindow:
         self.backup_service = BackupService()
         self.cleanup_service = CleanupService(self.backup_service)
         self.history_service = HistoryService()
+        self.scheduler_service = SchedulerService()
 
         # Application state
         self.cleanup_thread: Optional[threading.Thread] = None
@@ -66,6 +70,10 @@ class MainWindow:
 
         # Load and apply saved configuration
         self._apply_config()
+        
+        # Check for updates if enabled
+        if self.config_manager.get_config_value("check_updates_on_startup", True):
+            self._start_update_check_silent()
 
     def _get_version(self) -> str:
         """Get the application version from version.txt file."""
@@ -254,6 +262,20 @@ class MainWindow:
         self.start_button.pack(side=tk.LEFT, padx=(0, 8))
         self._add_hover_effect(self.start_button, self.colors["success"], self.colors["success_light"])
 
+        # Analyze button
+        self.analyze_button = tk.Button(
+            button_frame,
+            text="📊  Analyze",
+            command=self._start_analysis,
+            bg=self.colors["info"],
+            fg="#ffffff",
+            activebackground=self.colors["accent"],
+            activeforeground="#ffffff",
+            **button_style,
+        )
+        self.analyze_button.pack(side=tk.LEFT, padx=8)
+        self._add_hover_effect(self.analyze_button, self.colors["info"], self.colors["accent"])
+
         # Dry Run button
         self.dry_run_button = tk.Button(
             button_frame,
@@ -334,6 +356,23 @@ class MainWindow:
             cursor="hand2",
         )
         history_button.pack(side=tk.LEFT, padx=4)
+
+        # Schedule button
+        schedule_button = tk.Button(
+            button_frame,
+            text="📅 Schedule",
+            command=self._open_schedule_dialog,
+            bg=self.colors["bg_tertiary"],
+            fg=self.colors["text_primary"],
+            activebackground=self.colors["accent"],
+            activeforeground="#ffffff",
+            font=("Segoe UI", 10),
+            relief="flat",
+            padx=15,
+            pady=10,
+            cursor="hand2",
+        )
+        schedule_button.pack(side=tk.LEFT, padx=4)
 
     def _create_provider_toggles(self):
         """Create the provider toggles section."""
@@ -923,6 +962,7 @@ class MainWindow:
         stop_state = "normal" if cleaning else "disabled"
 
         self.start_button.config(state=state)
+        self.analyze_button.config(state=state)
         self.dry_run_button.config(state=state)
         self.backup_button.config(state=state)
         self.stop_button.config(state=stop_state)
@@ -1035,6 +1075,10 @@ class MainWindow:
         from .history_dialog import HistoryDialog
         HistoryDialog(self.root, self.history_service, self.colors)
 
+    def _open_schedule_dialog(self):
+        """Open the schedule dialog."""
+        ScheduleDialog(self.root, self.scheduler_service, self.colors)
+
     def on_closing(self):
         """Handle application closing."""
         if self.is_cleaning:
@@ -1045,4 +1089,101 @@ class MainWindow:
                 self.root.destroy()
         else:
             self.root.destroy()
+
+    def _start_analysis(self):
+        """Start analysis mode."""
+        if self.is_cleaning:
+            return
+        
+        self.is_cleaning = True
+        self._set_buttons_state(cleaning=True)
+        self._update_status("Analyzing cache sizes...")
+        self._update_progress(0)
+        
+        threading.Thread(target=self._run_analysis, daemon=True).start()
+
+    def _run_analysis(self):
+        """Run analysis in background."""
+        try:
+            locations = self.detection_service.get_all_cache_locations()
+            total_size = 0
+            provider_sizes = {}
+            
+            count = len(locations)
+            for i, loc in enumerate(locations):
+                size = 0
+                if loc.path.exists():
+                    try:
+                        if loc.path.is_file():
+                            size = loc.path.stat().st_size
+                        else:
+                            for f in loc.path.rglob("*"):
+                                if f.is_file():
+                                    size += f.stat().st_size
+                    except (PermissionError, OSError):
+                        pass
+                
+                loc.estimated_size = size
+                total_size += size
+                
+                # Group by provider display name
+                providers = self.detection_service.get_provider_info()
+                p_display = next((p.display_name for p in providers if p.name == loc.provider_name), loc.provider_name)
+                
+                provider_sizes[p_display] = provider_sizes.get(p_display, 0) + size
+                
+                # Update progress
+                if count > 0:
+                    self._update_progress((i + 1) / count * 100)
+            
+            self.root.after(0, lambda: self._show_analysis_results(provider_sizes, total_size))
+            
+        except Exception as e:
+            self.logging_config.get_logger(__name__).error(f"Analysis failed: {e}", exc_info=True)
+            self._update_status("Analysis failed.")
+        finally:
+            self.root.after(0, self._operation_finished_analysis)
+
+    def _operation_finished_analysis(self):
+        """Reset UI after analysis."""
+        self.is_cleaning = False
+        self._set_buttons_state(cleaning=False)
+        self._update_status("Analysis complete.")
+        self._update_progress(100)
+
+    def _show_analysis_results(self, provider_sizes: dict, total_size: int):
+        """Show analysis results dialog."""
+        msg = f"Analysis Complete\n\nTotal Recoverable Space: {self._format_bytes(total_size)}\n\nBreakdown:\n"
+        
+        # Sort by size desc
+        sorted_providers = sorted(provider_sizes.items(), key=lambda x: x[1], reverse=True)
+        
+        for name, size in sorted_providers:
+            if size > 0:
+                percentage = (size / total_size * 100) if total_size > 0 else 0
+                msg += f"• {name}: {self._format_bytes(size)} ({percentage:.1f}%)\n"
+        
+        messagebox.showinfo("Analysis Results", msg, parent=self.root)
+
+    def _start_update_check_silent(self):
+        """Start silent update check in background."""
+        threading.Thread(target=self._check_for_updates_silent, daemon=True).start()
+
+    def _check_for_updates_silent(self):
+        """Perform silent update check."""
+        try:
+            available, version, url, notes = UpdateService.check_for_updates()
+            if available:
+                self.root.after(0, lambda: self._handle_update_available_silent(version, url, notes))
+        except Exception as e:
+            self.logging_config.get_logger(__name__).error(f"Silent update check failed: {e}")
+
+    def _handle_update_available_silent(self, version, url, notes):
+        """Handle available update from silent check."""
+        if messagebox.askyesno(
+            "Update Available", 
+            f"A new version ({version}) is available!\n\nDo you want to view the release page?",
+            parent=self.root
+        ):
+            UpdateService.open_download_page(url)
 

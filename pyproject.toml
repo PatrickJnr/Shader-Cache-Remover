@@ -9,6 +9,9 @@ description = "A modular application for cleaning shader cache files from variou
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
+dependencies = [
+    "packaging>=23.0",
+]
 authors = [
     { name = "PatrickJnr" }
 ]

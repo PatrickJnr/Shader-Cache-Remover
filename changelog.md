@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.7.0] - 13-01-2026
+
+### Automated Maintenance & Analysis
+
+#### Added
+- **In-App Auto-Updater**: Automatically checks for new releases on GitHub.
+  - Silent check on startup (configurable in Settings).
+  - Manual "Check for Updates" button in Settings.
+  - Direct link to download page if update found.
+- **Scheduler GUI**: Built-in interface for Windows Task Scheduler.
+  - Schedule automated cleanups (Daily, Weekly, Monthly).
+  - Configure specific run times and days.
+  - Toggle and remove scheduled tasks directly from the app.
+- **Smart Analysis Mode**: "Analyze" button to scan without deleting.
+  - Shows total recoverable space.
+  - Provides a breakdown of cache size by provider (NVIDIA, Steam, etc.).
+  - Visual progress tracking during analysis.
+
+#### Changed
+- Added `packaging` dependency for version comparison.
+- Added "Analyze" and "Schedule" buttons to the main dashboard.
+- Settings dialog updated with "Updates" section.
+
+---
+
 ## [1.6.0] - 13-01-2026
 
 ### Architecture Improvements & GUI Modernization

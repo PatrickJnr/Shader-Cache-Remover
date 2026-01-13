@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from shader_cache_remover.infrastructure.config_manager import ConfigManager
+from shader_cache_remover.core.update_service import UpdateService
+import threading
 
 
 class SettingsDialog:
@@ -98,6 +100,43 @@ class SettingsDialog:
         self._create_checkbox(options_frame, self.show_progress_var,
             "Show progress bar",
             "Display progress during cleanup")
+
+        # Updates section
+        self._create_section_header(general_frame, "Updates")
+        
+        update_frame = tk.Frame(general_frame, bg=self.colors["bg_secondary"], padx=15, pady=15)
+        update_frame.pack(fill=tk.X, pady=(0, 15))
+
+        # Startup check checkbox
+        self.check_on_startup_var = tk.BooleanVar(value=self.config_manager.get_config_value("check_updates_on_startup", True))
+        self._create_checkbox(update_frame, self.check_on_startup_var,
+            "Check for updates on launch",
+            "Automatically check for new versions when the app starts")
+            
+        tk.Label(update_frame, text="", bg=self.colors["bg_secondary"], height=1).pack() # Spacer
+
+        tk.Label(
+            update_frame, 
+            text=f"Current Version: {UpdateService.get_current_version()}",
+            font=(self.FONT_FAMILY, 10),
+            bg=self.colors["bg_secondary"],
+            fg=self.colors["text_primary"]
+        ).pack(side=tk.LEFT)
+
+        self.check_update_btn = tk.Button(
+            update_frame,
+            text="Check for Updates",
+            command=self._start_update_check,
+            bg=self.colors["bg_tertiary"],
+            fg=self.colors["text_primary"],
+            activebackground=self.colors["accent"],
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=12,
+            pady=6,
+            cursor="hand2",
+        )
+        self.check_update_btn.pack(side=tk.RIGHT)
 
         # Backup location section
         self._create_section_header(general_frame, "Backup Location")
@@ -389,6 +428,7 @@ class SettingsDialog:
                 "show_progress": self.show_progress_var.get(),
                 "backup_location": self.backup_location_var.get(),
                 "custom_paths": custom_paths,
+                "check_updates_on_startup": self.check_on_startup_var.get(),
             }
 
             self.config_manager.update_config(config_updates)
@@ -397,3 +437,37 @@ class SettingsDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save settings: {e}", parent=self.window)
+
+    def _start_update_check(self):
+        """Start update check in background thread."""
+        self.check_update_btn.config(state="disabled", text="Checking...")
+        threading.Thread(target=self._check_for_updates, daemon=True).start()
+
+    def _check_for_updates(self):
+        """Perform the actual update check."""
+        try:
+            available, version, url, notes = UpdateService.check_for_updates()
+            
+            # Schedule UI update on main thread
+            self.window.after(0, lambda: self._handle_update_result(available, version, url, notes))
+        except Exception as e:
+            self.window.after(0, lambda: self._handle_update_error(str(e)))
+
+    def _handle_update_result(self, available, version, url, notes):
+        """Handle the result of the update check in the UI thread."""
+        self.check_update_btn.config(state="normal", text="Check for Updates")
+        
+        if available:
+            if messagebox.askyesno(
+                "Update Available", 
+                f"Version {version} is available!\n\nRelease Notes:\n{notes}\n\nDo you want to view the release page?",
+                parent=self.window
+            ):
+                UpdateService.open_download_page(url)
+        else:
+            messagebox.showinfo("Up to Date", "You are running the latest version.", parent=self.window)
+
+    def _handle_update_error(self, error_msg):
+        """Handle update check error."""
+        self.check_update_btn.config(state="normal", text="Check for Updates")
+        messagebox.showerror("Update Check Failed", f"Could not check for updates:\n{error_msg}", parent=self.window)
